@@ -103,6 +103,30 @@ s.waitForBoot({
     var accompaniment_durations = accompaniment_panola.durationPattern.asStream.all;
     var var1_accompaniment_notes = [];
     var var1_accompaniment_durs = [];
+    var original_pattern = Ppar([
+        Pbind(
+            \instrument, \default,
+
+            // \type, \midi,
+            // \midicmd, \noteOn,
+            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            // \chan, 0,
+
+            \midinote, Pseq(melody_notes),
+            \dur, Pseq(melody_durations)
+        ),
+        Pbind(
+            \instrument, \default,
+
+            // \type, \midi,
+            // \midicmd, \noteOn,
+            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            // \chan, 0,
+
+            \midinote, Pseq(accompaniment_notes),
+            \dur, Pseq(accompaniment_durations)
+        ),
+    ]);
     var variation1_pattern;
     var variation2_pattern;
     var variation3_pattern;
@@ -281,7 +305,7 @@ s.waitForBoot({
         ),
     ]);
 
-    all_variations = Pseq([variation2_pattern, variation3_pattern, variation1_pattern]);
+    all_variations = Pseq([original_pattern, variation2_pattern, variation3_pattern, variation1_pattern]);
     all_variations.play;
 
     melody_per_meas.do({|bar,baridx|
