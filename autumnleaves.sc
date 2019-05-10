@@ -98,7 +98,11 @@ s.waitForBoot({
     var melody_notes = melody_panola.midinotePattern.asStream.all;
     var melody_durations = melody_panola.durationPattern.asStream.all;
     var var1_melody_notes = [];
+    var var3_melody_notes = [];
+    var var4_melody_notes = [];
     var var1_melody_durs = [];
+    var var3_melody_durs = [];
+    var var4_melody_durs = [];
     var accompaniment_notes = accompaniment_panola.midinotePattern.asStream.all;
     var accompaniment_durations = accompaniment_panola.durationPattern.asStream.all;
     var var1_accompaniment_notes = [];
@@ -130,6 +134,7 @@ s.waitForBoot({
     var variation1_pattern;
     var variation2_pattern;
     var variation3_pattern;
+    var variation4_pattern;
     var all_variations;
 
     var expand_note = {
@@ -186,6 +191,32 @@ s.waitForBoot({
         [measures_note, measures_dur];
     };
 
+    var partial_reverse = {
+        | notes, durations, bylength=1 /*bylength = length in whole notes */|
+        var measures_note = [];
+        var measure_note = [];
+        var measures_dur = [];
+        var measure_dur = [];
+        var accumulated_length = 0;
+        notes.do({
+            | note, idx |
+
+            var duration = durations[idx];
+            measure_note = measure_note ++ [note];
+            measure_dur = measure_dur ++ duration;
+            accumulated_length = accumulated_length + duration;
+
+            if ((accumulated_length >= bylength) || (idx == notes.size) ) {
+                measures_note = measures_note ++ measure_note.reverse;
+                measures_dur = measures_dur ++ measure_dur;
+                measure_note = [];
+                measure_dur = [];
+                accumulated_length = 0;
+            };
+        });
+        [measures_note, measures_dur];
+    };
+
     melody_panola.midinotePattern.asStream.all.do({
         | note, idx |
         if (note.class == Array) {
@@ -200,6 +231,23 @@ s.waitForBoot({
             var decorated = expand_note.(note, melody_durations[idx], 4, 6, 1);
             var1_melody_notes = var1_melody_notes ++ decorated[0];
             var1_melody_durs = var1_melody_durs ++ decorated[1];
+        };
+    });
+
+    melody_panola.midinotePattern.asStream.all.reverse.do({
+        | note, idx |
+        if (note.class == Array) {
+            var length = note.size;
+            length.do({
+                |i|
+                var decorated = expand_note.(note[i], melody_durations[idx]/length, 4, 6, 1);
+                var4_melody_notes = var4_melody_notes ++ decorated[0];
+                var4_melody_durs = var4_melody_durs ++ decorated[1];
+            });
+        } /*else*/ {
+            var decorated = expand_note.(note, melody_durations[idx], 4, 6, 1);
+            var4_melody_notes = var4_melody_notes ++ decorated[0];
+            var4_melody_durs = var4_melody_durs ++ decorated[1];
         };
     });
 
@@ -261,19 +309,13 @@ s.waitForBoot({
             \midinote, Pseq(melody_panola.midinotePattern.asStream.all.reverse),
             \dur, Pseq(melody_panola.durationPattern.asStream.all),
         ),
-/*        Pbind(
-            \instrument, \default,
-            \midinote, Pseq(chordify.(melody_panola.midinotePattern.asStream.all,melody_panola.durationPattern.asStream.all,1)[0]),
-            \dur, Pseq(chordify.(melody_panola.midinotePattern.asStream.all,melody_panola.durationPattern.asStream.all,1)[1]),
-        ),
-        */
         Pbind(
             \instrument, \default,
 
             // \type, \midi,
             // \midicmd, \noteOn,
             // \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            // \chan, 0,
+            // \chan, 1,
 
             \midinote, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[0]),
             \dur, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[1]),
@@ -289,7 +331,7 @@ s.waitForBoot({
             // \midiout, ~rev2.midi_out, // must provide the MIDI target here
             // \chan, 0,
 
-            \midinote, Pseq(melody_panola.midinotePattern.asStream.all.reverse),
+            \midinote, Pseq(partial_reverse.(melody_panola.midinotePattern.asStream.all,melody_panola.durationPattern.asStream.all)[0]),
             \dur, Pseq(melody_panola.durationPattern.asStream.all),
         ),
         Pbind(
@@ -300,12 +342,37 @@ s.waitForBoot({
             // \midiout, ~rev2.midi_out, // must provide the MIDI target here
             // \chan, 0,
 
-            \midinote, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[0].dup(3).flatten),
-            \dur, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[1].dup(3).flatten/3),
+            \midinote, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[0].dup(3).flatten(1)),
+            \dur, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[1].dup(3).flatten(1)/3),
         ),
     ]);
 
-    all_variations = Pseq([original_pattern, variation2_pattern, variation3_pattern, variation1_pattern]);
+    variation4_pattern = Ppar([
+        Pbind(
+            \instrument, \default,
+
+            // \type, \midi,
+            // \midicmd, \noteOn,
+            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            // \chan, 0,
+
+            \midinote, Pseq(var4_melody_notes),
+            \dur, Pseq(melody_panola.durationPattern.asStream.all),
+        ),
+        Pbind(
+            \instrument, \default,
+
+            // \type, \midi,
+            // \midicmd, \noteOn,
+            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            // \chan, 0,
+
+            \midinote, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[0].dup(2).flatten(1)),
+            \dur, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[1].dup(2).flatten(1)/2),
+        ),
+    ]);
+
+    all_variations = Pseq([original_pattern, variation2_pattern, variation3_pattern, variation4_pattern, variation1_pattern]);
     all_variations.play;
 
     melody_per_meas.do({|bar,baridx|
