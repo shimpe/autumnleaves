@@ -4,6 +4,10 @@
 )
 
 (
+~rev2.makeNRPNResponder(nil, {|number, value| ("set "++value++" to "++number).postln; });
+)
+
+(
 s.waitForBoot({
     var barcheck = {
         | bar, expectedlength, baridx |
@@ -93,46 +97,64 @@ s.waitForBoot({
     var accompaniment_panola = Panola.new(accompaniment_joined);
     var accompaniment_pattern = accompaniment_panola.asPbind();
 
+    var wiggle;
+    var wiggle_pattern;
+    var chaotic_wiggle;
+    var chaotic_wiggle_pattern;
     var combined_pattern1 = Ppar([melody_pattern, accompaniment_pattern], 1);
 
-    var melody_notes = melody_panola.midinotePattern.asStream.all;
+    var melody_notes = melody_panola.midinotePattern.asStream.all+12;
     var melody_durations = melody_panola.durationPattern.asStream.all;
     var var1_melody_notes = [];
+    var var1b_melody_notes = [];
     var var3_melody_notes = [];
     var var4_melody_notes = [];
     var var1_melody_durs = [];
+    var var1b_melody_durs = [];
     var var3_melody_durs = [];
     var var4_melody_durs = [];
-    var accompaniment_notes = accompaniment_panola.midinotePattern.asStream.all;
+    var accompaniment_notes = accompaniment_panola.midinotePattern.asStream.all+12;
     var accompaniment_durations = accompaniment_panola.durationPattern.asStream.all;
     var var1_accompaniment_notes = [];
     var var1_accompaniment_durs = [];
+    var var1b_accompaniment_notes = [];
+    var var1b_accompaniment_durs = [];
+
+    var l =  NrpnTable();
     var original_pattern = Ppar([
         Pbind(
-            \instrument, \default,
+            // \instrument, \default,
 
-            // \type, \midi,
-            // \midicmd, \noteOn,
-            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            // \chan, 0,
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
 
             \midinote, Pseq(melody_notes),
             \dur, Pseq(melody_durations)
         ),
         Pbind(
-            \instrument, \default,
+            //\instrument, \default,
 
-            // \type, \midi,
-            // \midicmd, \noteOn,
-            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            // \chan, 0,
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
 
             \midinote, Pseq(accompaniment_notes),
             \dur, Pseq(accompaniment_durations)
         ),
     ]);
     var variation1_pattern;
+    var variation1b_pattern;
     var variation2_pattern;
+    var variation2a_pattern;
+    var var2a_melody_durs;
+    var var2a_accompaniment_durs;
+    var variation2c_pattern;
+    var var2c_melody_durs;
+    var var2c_accompaniment_durs;
+
     var variation3_pattern;
     var variation4_pattern;
     var all_variations;
@@ -217,6 +239,23 @@ s.waitForBoot({
         [measures_note, measures_dur];
     };
 
+    var arpeggify = {
+        | notes, durations |
+        var measures_note = [];
+        var measures_dur = [];
+        if (notes.class == Array) {
+            notes.size.do({ |i|
+                measures_note = measures_note ++ [notes[i]];
+                measures_dur =  measures_dur ++ [(durations/(notes.size))];
+            });
+        } {
+            measures_note = measures_note ++ [notes];
+            measures_dur =  measures_dur ++ [durations];
+        };
+
+        [measures_note, measures_dur]
+    };
+
     melody_panola.midinotePattern.asStream.all.do({
         | note, idx |
         if (note.class == Array) {
@@ -232,6 +271,13 @@ s.waitForBoot({
             var1_melody_notes = var1_melody_notes ++ decorated[0];
             var1_melody_durs = var1_melody_durs ++ decorated[1];
         };
+    });
+
+    melody_panola.midinotePattern.asStream.all.do({
+        | note, idx |
+        var decorated = arpeggify.(note, melody_durations[idx]);
+        var1b_melody_notes = var1b_melody_notes ++ decorated[0];
+        var1b_melody_durs = var1b_melody_durs ++ decorated[1];
     });
 
     melody_panola.midinotePattern.asStream.all.reverse.do({
@@ -268,7 +314,15 @@ s.waitForBoot({
         };
     });
 
+    accompaniment_panola.midinotePattern.asStream.all.do({
+        | note, idx |
+        var decorated = arpeggify.(note, accompaniment_durations[idx]);
+        var1b_accompaniment_notes = var1b_accompaniment_notes ++ decorated[0];
+        var1b_accompaniment_durs = var1b_accompaniment_durs ++ decorated[1];
+    });
+
     // F1 P22 (PLUCKY/WASHY)
+    // F3 P50 (FLOOTY)
     // F1 P48 (WOOD ORGAN)/F3 P87 (ORGAN/CLEARER)
     // F1 P69 (SOLO XTREME)/F2 P82 (SOLO XTREME SOFTER)
     // F1 P79 (modwheel,CRYSTALS)
@@ -278,102 +332,289 @@ s.waitForBoot({
     // F3 P103 (SPACY)
     // F3 112 (SAD)
     // F3 120 (XTREME CLEAR)
+    // F3 P41 (EXTREME CRYSTALS)
     // F2 52 (XTREME NOT CLEAR)
     // F2 76 (XTREME MOSTLY BASS)
+    // F4 P15 (COMPUTER)
     variation1_pattern = Ppar([
         Pbind(
-            \instrument, \default,
+            //\instrument, \default,
 
-            // \type, \midi,
-            // \midicmd, \noteOn,
-            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            // \chan, 0,
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
 
             \midinote, Pseq(var1_melody_notes),
             \dur, Pseq(var1_melody_durs)),
         Pbind(
-            \instrument, \default,
+            //\instrument, \default,
 
-            // \type, \midi,
-            // \midicmd, \noteOn,
-            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            // \chan, 0,
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
 
             \midinote, Pseq(var1_accompaniment_notes),
             \dur, Pseq(var1_accompaniment_durs))
-        ], inf);
+        ]);
+
+    variation1b_pattern = Ppar([
+        Pbind(
+            //\instrument, \default,
+
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
+            \amp, 0.9,
+            \midinote, Pseq(var1b_melody_notes),
+            \dur, Pseq(var1b_melody_durs*2)),
+        Pbind(
+            //\instrument, \default,
+
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \amp, 0.9,
+            \chan, 0,
+
+            \midinote, Pseq(var1b_accompaniment_notes),
+            \dur, Pseq(var1b_accompaniment_durs*2))
+    ]);
+
+    var2a_melody_durs = (chordify.(melody_panola.midinotePattern.asStream.all.reverse, melody_panola.durationPattern.asStream.all,1)[1]*6);
+    var2a_accompaniment_durs = (chordify.(accompaniment_panola.midinotePattern.asStream.all+12,accompaniment_panola.durationPattern.asStream.all,1)[1]*3);
+    variation2a_pattern = Ppar([
+        Pbind(
+            //\instrument, \default,
+
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
+
+            \midinote, Pseq(chordify.(melody_panola.midinotePattern.asStream.all.reverse+12, melody_panola.durationPattern.asStream.all,1)[0]),
+            \dur, Pseq(var2a_melody_durs),
+            \amp, Pbrown(0.56,0.7,0.05),
+        ),
+        Pbind(
+            // \instrument, \default,
+
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
+
+            \midinote, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all+12,accompaniment_panola.durationPattern.asStream.all,1)[0]),
+            \dur, Pseq(var2a_accompaniment_durs),
+        ),
+    ]);
+
+    var2c_melody_durs = (chordify.(melody_panola.midinotePattern.asStream.all.reverse, melody_panola.durationPattern.asStream.all,1)[1]*3);
+    var2c_accompaniment_durs = (chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[1]*1.5);
+    variation2c_pattern = Ppar([
+        Pbind(
+            //\instrument, \default,
+
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
+
+            \midinote, Pseq(chordify.(melody_panola.midinotePattern.asStream.all.reverse+12, melody_panola.durationPattern.asStream.all,1)[0]),
+            \dur, Pseq(var2c_melody_durs),
+            \amp, Pbrown(0.56, 0.9, 0.05),
+        ),
+        Pbind(
+            // \instrument, \default,
+
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
+
+            \midinote, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all+12,accompaniment_panola.durationPattern.asStream.all,1)[0],2),
+            \dur, Pseq(var2c_accompaniment_durs),
+        ),
+    ]);
 
     variation2_pattern = Ppar([
         Pbind(
-            \instrument, \default,
-            \midinote, Pseq(melody_panola.midinotePattern.asStream.all.reverse),
+            //\instrument, \default,
+
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
+
+            \midinote, Pseq(melody_panola.midinotePattern.asStream.all.reverse+12),
             \dur, Pseq(melody_panola.durationPattern.asStream.all),
+            \amp, 0.56,
         ),
         Pbind(
-            \instrument, \default,
+            // \instrument, \default,
 
-            // \type, \midi,
-            // \midicmd, \noteOn,
-            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            // \chan, 1,
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
 
-            \midinote, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[0]),
-            \dur, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[1]),
+            \midinote, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all+12,accompaniment_panola.durationPattern.asStream.all,1)[0]),
+            \dur, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all+12,accompaniment_panola.durationPattern.asStream.all,1)[1]),
         ),
     ]);
 
     variation3_pattern = Ppar([
         Pbind(
-            \instrument, \default,
+            //\instrument, \default,
 
-            // \type, \midi,
-            // \midicmd, \noteOn,
-            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            // \chan, 0,
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
 
-            \midinote, Pseq(partial_reverse.(melody_panola.midinotePattern.asStream.all,melody_panola.durationPattern.asStream.all)[0]),
-            \dur, Pseq(melody_panola.durationPattern.asStream.all),
+            //\midinote, Pseq(partial_reverse.(melody_panola.midinotePattern.asStream.all+12,melody_panola.durationPattern.asStream.all)[0]),
+            //\dur, Pseq(melody_panola.durationPattern.asStream.all),
+            \midinote, Pseq(melody_notes),
+            \dur, Pseq(melody_durations),
+            \amp, 0.9,
         ),
         Pbind(
-            \instrument, \default,
+            //\instrument, \default,
 
-            // \type, \midi,
-            // \midicmd, \noteOn,
-            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            // \chan, 0,
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
 
-            \midinote, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[0].dup(3).flatten(1)),
+            \midinote, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all+12,accompaniment_panola.durationPattern.asStream.all,1)[0].dup(3).flatten(1)),
             \dur, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[1].dup(3).flatten(1)/3),
+            \amp, 0.3,
         ),
     ]);
 
     variation4_pattern = Ppar([
         Pbind(
-            \instrument, \default,
+            //\instrument, \default,
 
-            // \type, \midi,
-            // \midicmd, \noteOn,
-            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            // \chan, 0,
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
 
             \midinote, Pseq(var4_melody_notes),
             \dur, Pseq(melody_panola.durationPattern.asStream.all),
+            \amp, 0.9
         ),
         Pbind(
-            \instrument, \default,
+            //\instrument, \default,
 
-            // \type, \midi,
-            // \midicmd, \noteOn,
-            // \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            // \chan, 0,
+            \type, \midi,
+            \midicmd, \noteOn,
+            \midiout, ~rev2.midi_out, // must provide the MIDI target here
+            \chan, 0,
 
-            \midinote, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[0].dup(2).flatten(1)),
+            \midinote, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all+12,accompaniment_panola.durationPattern.asStream.all,1)[0].dup(2).flatten(1)),
             \dur, Pseq(chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[1].dup(2).flatten(1)/2),
+            \amp, 0.9
         ),
     ]);
 
-    all_variations = Pseq([original_pattern, variation2_pattern, variation3_pattern, variation4_pattern, variation1_pattern]);
+    wiggle = { |x| sin(2*pi*0.1*x).linlin(-1, 1, (8192-600), (8192+600)); };
+    wiggle_pattern = Pbind(
+        \dev, Ptime().collect(wiggle),
+        \send, Pfunc({|ev| ~rev2.midi_out.bend(0, ev[\dev]); }),
+        \dur, 0.2,
+        \amp, 0,
+    );
+    chaotic_wiggle = { |x| sin(2*pi*0.3*x).linlin(-1, 1, (8192-5000), (8192+5000)); };
+    chaotic_wiggle_pattern = Pbind(
+        \dev, Phenon().linlin(0,1,8192-5000,8192+5000),
+        \send, Pfunc({|ev| ~rev2.midi_out.bend(0, ev[\dev][0]); }),
+        \dur, 0.2,
+        \amp, 0,
+    );
+
+
+    all_variations = Pseq([
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F1", "P3"); ~rev2.sendNRPN(l.str2num(\UNISON_OFFON,"B").debug("nrpn"), 0); nil})),
+        original_pattern,
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P5"); nil})),
+        variation2_pattern,
+
+        ////Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P100"); nil})),
+        ////variation2_pattern,
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P11"); nil})),
+        variation3_pattern,
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P20"); nil})),
+        Ppar([
+            Pseq([
+                Pfindur((var2a_accompaniment_durs.sum).max(var2a_melody_durs.sum)/2,
+                     wiggle_pattern),
+                Pfunc({~rev2.midi_out.bend(0, 8192); nil})]),
+            Pfindur((var2a_accompaniment_durs.sum).max(var2a_melody_durs.sum)/2,
+                variation2a_pattern)]),
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F1", "P79"); nil})),
+        variation3_pattern,
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F1", "P86"); nil})),
+        variation4_pattern,
+
+        //Pbind(\send, Pfunc({~rev2.select_patch_by_id("F1", "P48"); nil})),
+        //Ppar([
+        //    Pseq([
+        //        Pfindur((var1_accompaniment_durs.sum).max(var1_melody_durs.sum),
+        //            wiggle_pattern),
+        //        Pfunc({~rev2.midi_out.bend(0, 8192); nil})]),
+        //    Pfindur((var1_accompaniment_durs.sum).max(var1_melody_durs.sum), variation1_pattern)]),
+        //Pbind(\send, Pfunc({~rev2.select_patch_by_id("F1", "P22"); nil})),
+        //variation1_pattern,
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P74"); nil})),
+        variation2c_pattern,
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P66"); nil})),
+        variation1b_pattern,
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P61"); nil})),
+        variation1_pattern,
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P81"); nil})),
+        variation4_pattern,
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P128"); nil})),
+        variation1_pattern,
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P73"); nil})),
+        Ppar([
+            Pseq([
+                Pfindur((var2c_accompaniment_durs.sum).max(var2c_melody_durs.sum)/2,
+                     chaotic_wiggle_pattern),
+                Pfunc({~rev2.midi_out.bend(0, 8192); nil})]),
+            Pfindur((var2c_accompaniment_durs.sum).max(var2c_melody_durs.sum)/2,
+                variation2c_pattern)]),
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P28"); ~rev2.sendNRPN(l.str2num('ABMODE'), 0); nil})),
+        Padd(\midinote, Pfunc({-24}), variation2c_pattern),
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P128"); ~rev2.sendNRPN(l.str2num(\UNISON_OFFON), 0); nil})),
+        variation1_pattern,
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("U1", "P1"); ~rev2.sendNRPN(l.str2num(\UNISON_OFFON), 0); ~rev2.sendNRPN(l.str2num(\UNISON_OFFON, "B"), 0); nil})),
+        Padd(\midinote, Pfunc({-24}), original_pattern),
+
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P106"); ~rev2.sendNRPN(l.str2num(\UNISON_OFFON), 0); nil})),
+        variation1_pattern,
+
+    ]);
+
     all_variations.play;
+
 
     melody_per_meas.do({|bar,baridx|
         barcheck.(bar, 1, baridx);
