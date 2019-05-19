@@ -104,8 +104,15 @@ s.waitForBoot({
 
     var l =  NrpnTable();
 
+    var maybe_make_rest = {
+      | note, chance |
+        chance.coin.if({
+            note = Rest();
+        });
+        note;
+    };
     var expand_note = {
-        | note, duration, range=6, maxdiv=3, modmult=5 |
+        | note, duration, chance_rest=0.2, range=6, maxdiv=3, modmult=5 |
         var resulting_notes = [];
         var resulting_durs = [];
         var divisions = 1.rrand(maxdiv);
@@ -118,13 +125,13 @@ s.waitForBoot({
                 resulting_durs = resulting_durs.add(duration/divisions);
                 (divisions-2).do({
                     var mod = range.rrand(range.neg);
-                    resulting_notes = resulting_notes.add(note+(mod*modmult));
+                    resulting_notes = resulting_notes.add(maybe_make_rest.(note+(mod*modmult), chance_rest));
                     resulting_durs = resulting_durs.add(duration/divisions);
                 });
                 resulting_notes = resulting_notes.add(note);
                 resulting_durs = resulting_durs.add(duration/divisions);
             } {
-                resulting_notes = resulting_notes.add(note);
+                resulting_notes = resulting_notes.add(maybe_make_rest.(note, chance_rest));
                 resulting_durs = resulting_durs.add(duration);
             };
         };
@@ -142,12 +149,12 @@ s.waitForBoot({
                 var length = note.size;
                 length.do({
                     |i|
-                    var decorated = expand_note.(note[i], durations[idx]/length, 3, 3, 1);
+                    var decorated = expand_note.(note[i], durations[idx]/length, 0.2, 3, 3, 1);
                     ns = ns ++ decorated[0];
                     ds = ds ++ decorated[1];
                 });
             } /*else*/ {
-                var decorated = expand_note.(note, durations[idx], 3, 3, 1);
+                var decorated = expand_note.(note, durations[idx], 0.2, 3, 3, 1);
                 ns = ns ++ decorated[0];
                 ds = ds ++ decorated[1];
             };
@@ -166,12 +173,12 @@ s.waitForBoot({
                 var length = note.size;
                 length.do({
                     |i|
-                    var decorated = expand_note.(note[i], durations[idx]/length, 4, 6, 1);
+                    var decorated = expand_note.(note[i], durations[idx]/length, 0.2, 4, 6, 1);
                     ns = ns ++ decorated[0];
                     ds = ds ++ decorated[1];
                 });
             } /*else*/ {
-                var decorated = expand_note.(note, durations[idx], 4, 6, 1);
+                var decorated = expand_note.(note, durations[idx], 0.2, 4, 6, 1);
                 ns = ns ++ decorated[0];
                 ds = ds ++ decorated[1];
             };
@@ -270,7 +277,10 @@ s.waitForBoot({
     // F2 76 (XTREME MOSTLY BASS)
     // F4 P15 (COMPUTER)
     var pattern_compiler = {
-        | mel_notes, mel_durs, meldur_transformer, mel_tempo_scale, accomp_notes, accomp_durs, accompdur_transformer, accomp_tempo_scale, mel_amp_pat=nil, accomp_amp_pat=nil, mel_chan=0, dur_chan=0 |
+        | mel_notes, mel_durs, meldur_transformer, mel_tempo_scale,
+          accomp_notes, accomp_durs, accompdur_transformer, accomp_tempo_scale,
+          mel_amp_pat=nil, accomp_amp_pat=nil,
+          mel_chan=0, dur_chan=0 |
 
         var mel_final_durations = (meldur_transformer.(mel_notes, mel_durs)[1])*mel_tempo_scale;
         var mel_final_notes = meldur_transformer.(mel_notes, mel_durs)[0];
