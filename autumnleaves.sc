@@ -104,6 +104,7 @@ s.waitForBoot({
 
     var l =  NrpnTable();
 
+    var keep_original = { | notes, durations | [notes, durations]; };
     var maybe_make_rest = {
       | note, chance |
         chance.coin.if({
@@ -213,7 +214,6 @@ s.waitForBoot({
         [measures_note, measures_dur];
     };
     var chordify_per_meas = { |notes, durations| chordify.(notes, durations, 1); };
-    var keep_original = { | notes, durations | [notes, durations]; };
     var partial_reverse = {
         | notes, durations, bylength=1 /*bylength = length in whole notes */|
         var measures_note = [];
@@ -419,6 +419,19 @@ s.waitForBoot({
         accomp_amp_pat: Pseq([0.9], inf),
     );
 
+    var variation5_pattern = pattern_compiler.(
+        mel_notes: melody_panola.midinotePattern.asStream.all,
+        mel_durs: melody_panola.durationPattern.asStream.all,
+        meldur_transformer: partial_reverse_by_meas,
+        mel_tempo_scale: 1,
+        accomp_notes: (accompaniment_panola.midinotePattern.asStream.all+12).dup(2).flatten(1),
+        accomp_durs: (accompaniment_panola.durationPattern.asStream.all).dup(2).flatten(1),
+        accompdur_transformer: partial_reverse_by_meas,
+        accomp_tempo_scale: 0.5,
+        mel_amp_pat: Pseq([0.9], inf),
+        accomp_amp_pat: Pseq([0.9], inf),
+    );
+
     var wiggle = { |x| sin(2*pi*0.1*x).linlin(-1, 1, (8192-600), (8192+600)); };
     var wiggle_pattern = Pbind(
         \dev, Ptime().collect(wiggle),
@@ -463,7 +476,7 @@ s.waitForBoot({
             ~rev2.sendNRPN(l.str2num(\LPF_RESONANCE), 10);
             ~rev2.sendNRPN(l.str2num(\LPF_ENV_AMT), 71 + 127);
             nil})),
-        variation3_pattern[\pat],
+        variation5_pattern[\pat],
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F1", "P86"); nil})),
         variation4_pattern[\pat],
@@ -519,6 +532,10 @@ s.waitForBoot({
             ~rev2.sendNRPN(l.str2num(\LPF_RESONANCE), 85);
             nil})),
         variation1_pattern[\pat],
+
+        Pbind(\send, Pfunc({ ~rev2.select_patch_by_id("F1","P127"); nil;})),
+        Panola("<g_1*10 g2_2 d3 a3 b- d4>").asMidiPbind(~rev2.midi_out)
+
     ]);
 
     all_variations.play;
