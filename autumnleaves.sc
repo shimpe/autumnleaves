@@ -106,16 +106,12 @@ s.waitForBoot({
 
     var melody_notes = melody_panola.midinotePattern.asStream.all+12;
     var melody_durations = melody_panola.durationPattern.asStream.all;
-    var var1b_melody_notes = [];
     var var3_melody_notes = [];
     var var4_melody_notes = [];
-    var var1b_melody_durs = [];
     var var3_melody_durs = [];
     var var4_melody_durs = [];
     var accompaniment_notes = accompaniment_panola.midinotePattern.asStream.all+12;
     var accompaniment_durations = accompaniment_panola.durationPattern.asStream.all;
-    var var1b_accompaniment_notes = [];
-    var var1b_accompaniment_durs = [];
 
     var l =  NrpnTable();
     var original_pattern = Ppar([
@@ -285,29 +281,26 @@ s.waitForBoot({
         [measures_note, measures_dur];
     };
     var partial_reverse_by_meas = { |notes, durations| partial_reverse.(notes, durations, 1); };
+
     var arpeggify = {
         | notes, durations |
-        var measures_note = [];
-        var measures_dur = [];
-        if (notes.class == Array) {
-            notes.size.do({ |i|
-                measures_note = measures_note ++ [notes[i]];
-                measures_dur =  measures_dur ++ [(durations/(notes.size))];
-            });
-        } {
-            measures_note = measures_note ++ [notes];
-            measures_dur =  measures_dur ++ [durations];
-        };
+        var ns = [];
+        var ds = [];
+        notes.do({
+            | note, idx |
+            if (note.class == Array) {
+                note.size.do({ |i|
+                    ns = ns ++ [note[i]];
+                    ds = ds ++ [(durations[idx]/(note.size))];
+                });
+            } {
+                ns = ns ++ [note];
+                ds = ds ++ [durations[idx]];
+            };
+        });
 
-        [measures_note, measures_dur]
+        [ns, ds]
     };
-
-    melody_panola.midinotePattern.asStream.all.do({
-        | note, idx |
-        var decorated = arpeggify.(note, melody_durations[idx]);
-        var1b_melody_notes = var1b_melody_notes ++ decorated[0];
-        var1b_melody_durs = var1b_melody_durs ++ decorated[1];
-    });
 
     melody_panola.midinotePattern.asStream.all.reverse.do({
         | note, idx |
@@ -324,13 +317,6 @@ s.waitForBoot({
             var4_melody_notes = var4_melody_notes ++ decorated[0];
             var4_melody_durs = var4_melody_durs ++ decorated[1];
         };
-    });
-
-    accompaniment_panola.midinotePattern.asStream.all.do({
-        | note, idx |
-        var decorated = arpeggify.(note, accompaniment_durations[idx]);
-        var1b_accompaniment_notes = var1b_accompaniment_notes ++ decorated[0];
-        var1b_accompaniment_durs = var1b_accompaniment_durs ++ decorated[1];
     });
 
     // F1 P22 (PLUCKY/WASHY)
@@ -404,29 +390,16 @@ s.waitForBoot({
         accomp_tempo_scale:1
     );
 
-    variation1b_pattern = Ppar([
-        Pbind(
-            //\instrument, \default,
-
-            \type, \midi,
-            \midicmd, \noteOn,
-            \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            \chan, 0,
-            \amp, 0.9,
-            \midinote, Pseq(var1b_melody_notes),
-            \dur, Pseq(var1b_melody_durs*2)),
-        Pbind(
-            //\instrument, \default,
-
-            \type, \midi,
-            \midicmd, \noteOn,
-            \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            \amp, 0.9,
-            \chan, 0,
-
-            \midinote, Pseq(var1b_accompaniment_notes),
-            \dur, Pseq(var1b_accompaniment_durs*2))
-    ]);
+    variation1b_pattern = pattern_compiler.(
+        mel_notes: melody_panola.midinotePattern.asStream.all,
+        mel_durs: melody_panola.durationPattern.asStream.all,
+        meldur_transformer: arpeggify,
+        mel_tempo_scale: 1,
+        accomp_notes: accompaniment_panola.midinotePattern.asStream.all,
+        accomp_durs: accompaniment_panola.durationPattern.asStream.all,
+        accompdur_transformer: arpeggify,
+        accomp_tempo_scale: 1,
+    );
 
     var2a_melody_durs = (chordify.(melody_panola.midinotePattern.asStream.all.reverse, melody_panola.durationPattern.asStream.all,1)[1]*6);
     var2a_accompaniment_durs = (chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[1]*3);
@@ -546,11 +519,10 @@ s.waitForBoot({
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P74"); nil})),
         Pfindur((variation2c_pattern[\accomp_durs].sum).max(variation2c_pattern[\mel_durs].sum)/2,
                 variation2c_pattern[\pat]),
+        */
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P66"); ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 37); nil})),
-        variation1b_pattern,
-
-        */
+        variation1b_pattern[\pat],
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P61"); nil})),
         variation1_pattern[\pat],
