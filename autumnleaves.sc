@@ -106,10 +106,6 @@ s.waitForBoot({
 
     var melody_notes = melody_panola.midinotePattern.asStream.all+12;
     var melody_durations = melody_panola.durationPattern.asStream.all;
-    var var3_melody_notes = [];
-    var var4_melody_notes = [];
-    var var3_melody_durs = [];
-    var var4_melody_durs = [];
     var accompaniment_notes = accompaniment_panola.midinotePattern.asStream.all+12;
     var accompaniment_durations = accompaniment_panola.durationPattern.asStream.all;
 
@@ -300,23 +296,6 @@ s.waitForBoot({
         [ns, ds]
     };
 
-    melody_panola.midinotePattern.asStream.all.reverse.do({
-        | note, idx |
-        if (note.class == Array) {
-            var length = note.size;
-            length.do({
-                |i|
-                var decorated = expand_note.(note[i], melody_durations[idx]/length, 4, 6, 1);
-                var4_melody_notes = var4_melody_notes ++ decorated[0];
-                var4_melody_durs = var4_melody_durs ++ decorated[1];
-            });
-        } /*else*/ {
-            var decorated = expand_note.(note, melody_durations[idx], 4, 6, 1);
-            var4_melody_notes = var4_melody_notes ++ decorated[0];
-            var4_melody_durs = var4_melody_durs ++ decorated[1];
-        };
-    });
-
     // F1 P22 (PLUCKY/WASHY)
     // F3 P50 (FLOOTY)
     // F1 P48 (WOOD ORGAN)/F3 P87 (ORGAN/CLEARER)
@@ -449,9 +428,9 @@ s.waitForBoot({
     );
 
     variation4_pattern = pattern_compiler.(
-        mel_notes: var4_melody_notes,
+        mel_notes: melody_panola.midinotePattern.asStream.all.reverse,
         mel_durs: melody_panola.durationPattern.asStream.all,
-        meldur_transformer: keep_original,
+        meldur_transformer: expand_notes_461,
         mel_tempo_scale: 1,
         accomp_notes: (accompaniment_panola.midinotePattern.asStream.all+12).dup(2).flatten(1),
         accomp_durs: (accompaniment_panola.durationPattern.asStream.all).dup(2).flatten(1)/2,
@@ -477,8 +456,6 @@ s.waitForBoot({
     );
 
     all_variations = Pseq([
-
-        /*
         Pbind(\send, Pfunc({
             ~rev2.select_patch_by_id("F1", "P3");
             ~rev2.sendNRPN(l.str2num(\UNISON_OFFON,"B"), 0);
@@ -514,7 +491,6 @@ s.waitForBoot({
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P74"); nil})),
         Pfindur((variation2c_pattern[\accomp_durs].sum).max(variation2c_pattern[\mel_durs].sum)/2,
                 variation2c_pattern[\pat]),
-        */
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P66"); ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 37); nil})),
         variation1b_pattern[\pat],
