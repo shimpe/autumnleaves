@@ -106,18 +106,14 @@ s.waitForBoot({
 
     var melody_notes = melody_panola.midinotePattern.asStream.all+12;
     var melody_durations = melody_panola.durationPattern.asStream.all;
-    var var1_melody_notes = [];
     var var1b_melody_notes = [];
     var var3_melody_notes = [];
     var var4_melody_notes = [];
-    var var1_melody_durs = [];
     var var1b_melody_durs = [];
     var var3_melody_durs = [];
     var var4_melody_durs = [];
     var accompaniment_notes = accompaniment_panola.midinotePattern.asStream.all+12;
     var accompaniment_durations = accompaniment_panola.durationPattern.asStream.all;
-    var var1_accompaniment_notes = [];
-    var var1_accompaniment_durs = [];
     var var1b_accompaniment_notes = [];
     var var1b_accompaniment_durs = [];
 
@@ -188,6 +184,54 @@ s.waitForBoot({
         [resulting_notes, resulting_durs]
     };
 
+    var expand_notes_331 = {
+        | notes, durations |
+        var ns = [];
+        var ds = [];
+        notes.do({
+            | note, idx |
+            if (note.class == Array) {
+                var length = note.size;
+                length.do({
+                    |i|
+                    var decorated = expand_note.(note[i], durations[idx]/length, 3, 3, 1);
+                    ns = ns ++ decorated[0];
+                    ds = ds ++ decorated[1];
+                });
+            } /*else*/ {
+                var decorated = expand_note.(note, durations[idx], 3, 3, 1);
+                ns = ns ++ decorated[0];
+                ds = ds ++ decorated[1];
+            };
+        });
+
+        [ns, ds]
+    };
+
+    var expand_notes_461 = {
+        | notes, durations |
+        var ns = [];
+        var ds = [];
+        notes.do({
+            | note, idx |
+            if (note.class == Array) {
+                var length = note.size;
+                length.do({
+                    |i|
+                    var decorated = expand_note.(note[i], durations[idx]/length, 4, 6, 1);
+                    ns = ns ++ decorated[0];
+                    ds = ds ++ decorated[1];
+                });
+            } /*else*/ {
+                var decorated = expand_note.(note, durations[idx], 4, 6, 1);
+                ns = ns ++ decorated[0];
+                ds = ds ++ decorated[1];
+            };
+        });
+
+        [ns, ds]
+    };
+
     var chordify = {
         | notes, durations, bylength=1 /*bylength = length in whole notes */|
         var measures_note = [];
@@ -213,10 +257,8 @@ s.waitForBoot({
         });
         [measures_note, measures_dur];
     };
-
     var chordify_per_meas = { |notes, durations| chordify.(notes, durations, 1); };
     var keep_original = { | notes, durations | [notes, durations]; };
-
     var partial_reverse = {
         | notes, durations, bylength=1 /*bylength = length in whole notes */|
         var measures_note = [];
@@ -242,7 +284,7 @@ s.waitForBoot({
         });
         [measures_note, measures_dur];
     };
-
+    var partial_reverse_by_meas = { |notes, durations| partial_reverse.(notes, durations, 1); };
     var arpeggify = {
         | notes, durations |
         var measures_note = [];
@@ -259,23 +301,6 @@ s.waitForBoot({
 
         [measures_note, measures_dur]
     };
-
-    melody_panola.midinotePattern.asStream.all.do({
-        | note, idx |
-        if (note.class == Array) {
-            var length = note.size;
-            length.do({
-                |i|
-                var decorated = expand_note.(note[i], melody_durations[idx]/length, 4, 6, 1);
-                var1_melody_notes = var1_melody_notes ++ decorated[0];
-                var1_melody_durs = var1_melody_durs ++ decorated[1];
-            });
-        } /*else*/ {
-            var decorated = expand_note.(note, melody_durations[idx], 4, 6, 1);
-            var1_melody_notes = var1_melody_notes ++ decorated[0];
-            var1_melody_durs = var1_melody_durs ++ decorated[1];
-        };
-    });
 
     melody_panola.midinotePattern.asStream.all.do({
         | note, idx |
@@ -298,23 +323,6 @@ s.waitForBoot({
             var decorated = expand_note.(note, melody_durations[idx], 4, 6, 1);
             var4_melody_notes = var4_melody_notes ++ decorated[0];
             var4_melody_durs = var4_melody_durs ++ decorated[1];
-        };
-    });
-
-    accompaniment_panola.midinotePattern.asStream.all.do({
-        | note, idx |
-        if (note.class == Array) {
-            var length = note.size;
-            length.do({
-                |i|
-                var decorated = expand_note.(note[i], accompaniment_durations[idx]/length, 3, 3, 1);
-                var1_accompaniment_notes = var1_accompaniment_notes ++ decorated[0];
-                var1_accompaniment_durs = var1_accompaniment_durs ++ decorated[1];
-            });
-        } /*else*/ {
-            var decorated = expand_note.(note, accompaniment_durations[idx], 3, 3, 1);
-            var1_accompaniment_notes = var1_accompaniment_notes ++ decorated[0];
-            var1_accompaniment_durs = var1_accompaniment_durs ++ decorated[1];
         };
     });
 
@@ -381,19 +389,18 @@ s.waitForBoot({
             \mel_durs : mel_final_durations,
             \mel_notes: mel_final_notes,
             \accomp_durs: accomp_final_durations,
-            \accomp_notes: accomp_final_notes,
-
+            \accomp_notes: accomp_final_notes
         )
     };
 
     variation1_pattern = pattern_compiler.(
-        mel_notes: var1_melody_notes,
-        mel_durs: var1_melody_durs,
-        meldur_transformer: keep_original,
+        mel_notes: melody_panola.midinotePattern.asStream.all,
+        mel_durs: melody_panola.durationPattern.asStream.all,
+        meldur_transformer: expand_notes_461,
         mel_tempo_scale: 1,
-        accomp_notes: var1_accompaniment_notes,
-        accomp_durs: var1_accompaniment_durs,
-        accompdur_transformer: keep_original,
+        accomp_notes: accompaniment_panola.midinotePattern.asStream.all,
+        accomp_durs: accompaniment_panola.durationPattern.asStream.all,
+        accompdur_transformer: expand_notes_331,
         accomp_tempo_scale:1
     );
 
@@ -503,6 +510,7 @@ s.waitForBoot({
 
     all_variations = Pseq([
 
+        /*
         Pbind(\send, Pfunc({
             ~rev2.select_patch_by_id("F1", "P3");
             ~rev2.sendNRPN(l.str2num(\UNISON_OFFON,"B"), 0);
@@ -541,6 +549,8 @@ s.waitForBoot({
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P66"); ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 37); nil})),
         variation1b_pattern,
+
+        */
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P61"); nil})),
         variation1_pattern[\pat],
