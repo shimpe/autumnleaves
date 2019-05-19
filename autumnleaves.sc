@@ -103,30 +103,6 @@ s.waitForBoot({
     var accompaniment_durations = accompaniment_panola.durationPattern.asStream.all;
 
     var l =  NrpnTable();
-    var original_pattern = Ppar([
-        Pbind(
-            // \instrument, \default,
-
-            \type, \midi,
-            \midicmd, \noteOn,
-            \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            \chan, 0,
-
-            \midinote, Pseq(melody_notes),
-            \dur, Pseq(melody_durations)
-        ),
-        Pbind(
-            //\instrument, \default,
-
-            \type, \midi,
-            \midicmd, \noteOn,
-            \midiout, ~rev2.midi_out, // must provide the MIDI target here
-            \chan, 0,
-
-            \midinote, Pseq(accompaniment_notes),
-            \dur, Pseq(accompaniment_durations)
-        ),
-    ]);
 
     var expand_note = {
         | note, duration, range=6, maxdiv=3, modmult=5 |
@@ -338,6 +314,17 @@ s.waitForBoot({
         )
     };
 
+    var original_pattern = pattern_compiler.(
+        mel_notes: melody_panola.midinotePattern.asStream.all + 12,
+        mel_durs: melody_panola.durationPattern.asStream.all,
+        meldur_transformer: keep_original,
+        mel_tempo_scale: 1,
+        accomp_notes: accompaniment_panola.midinotePattern.asStream.all+12,
+        accomp_durs: accompaniment_panola.durationPattern.asStream.all,
+        accompdur_transformer: keep_original,
+        accomp_tempo_scale: 1,
+    );
+
     var variation1_pattern = pattern_compiler.(
         mel_notes: melody_panola.midinotePattern.asStream.all,
         mel_durs: melody_panola.durationPattern.asStream.all,
@@ -438,11 +425,12 @@ s.waitForBoot({
     );
 
     var all_variations = Pseq([
+
         Pbind(\send, Pfunc({
             ~rev2.select_patch_by_id("F1", "P3");
             ~rev2.sendNRPN(l.str2num(\UNISON_OFFON,"B"), 0);
             nil})),
-        original_pattern,
+        original_pattern[\pat],
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P5"); nil})),
         variation2_pattern[\pat],
