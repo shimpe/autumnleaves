@@ -9,7 +9,6 @@
 
 (
 s.waitForBoot({
-    var pattern_compiler;
     var barcheck = {
         | bar, expectedlength, baridx |
         // expected length is expressed in #whole notes
@@ -97,13 +96,7 @@ s.waitForBoot({
     var accompaniment_joined = accompaniment_per_meas[skip_measures..].join(" ");
     var accompaniment_panola = Panola.new(accompaniment_joined);
     var accompaniment_pattern = accompaniment_panola.asPbind();
-
-    var wiggle;
-    var wiggle_pattern;
-    var chaotic_wiggle;
-    var chaotic_wiggle_pattern;
     var combined_pattern1 = Ppar([melody_pattern, accompaniment_pattern], 1);
-
     var melody_notes = melody_panola.midinotePattern.asStream.all+12;
     var melody_durations = melody_panola.durationPattern.asStream.all;
     var accompaniment_notes = accompaniment_panola.midinotePattern.asStream.all+12;
@@ -134,17 +127,6 @@ s.waitForBoot({
             \dur, Pseq(accompaniment_durations)
         ),
     ]);
-    var variation1_pattern;
-    var variation1b_pattern;
-    var variation2_pattern;
-    var variation2a_pattern;
-    var variation2c_pattern;
-    var var2c_melody_durs;
-    var var2c_accompaniment_durs;
-
-    var variation3_pattern;
-    var variation4_pattern;
-    var all_variations;
 
     var expand_note = {
         | note, duration, range=6, maxdiv=3, modmult=5 |
@@ -311,7 +293,7 @@ s.waitForBoot({
     // F2 52 (XTREME NOT CLEAR)
     // F2 76 (XTREME MOSTLY BASS)
     // F4 P15 (COMPUTER)
-        pattern_compiler = {
+    var pattern_compiler = {
         | mel_notes, mel_durs, meldur_transformer, mel_tempo_scale, accomp_notes, accomp_durs, accompdur_transformer, accomp_tempo_scale, mel_amp_pat=nil, accomp_amp_pat=nil, mel_chan=0, dur_chan=0 |
 
         var mel_final_durations = (meldur_transformer.(mel_notes, mel_durs)[1])*mel_tempo_scale;
@@ -356,7 +338,7 @@ s.waitForBoot({
         )
     };
 
-    variation1_pattern = pattern_compiler.(
+    var variation1_pattern = pattern_compiler.(
         mel_notes: melody_panola.midinotePattern.asStream.all,
         mel_durs: melody_panola.durationPattern.asStream.all,
         meldur_transformer: expand_notes_461,
@@ -367,7 +349,7 @@ s.waitForBoot({
         accomp_tempo_scale:1
     );
 
-    variation1b_pattern = pattern_compiler.(
+    var variation1b_pattern = pattern_compiler.(
         mel_notes: melody_panola.midinotePattern.asStream.all,
         mel_durs: melody_panola.durationPattern.asStream.all,
         meldur_transformer: arpeggify,
@@ -378,7 +360,7 @@ s.waitForBoot({
         accomp_tempo_scale: 1,
     );
 
-    variation2a_pattern = pattern_compiler.(
+    var variation2a_pattern = pattern_compiler.(
         mel_notes: melody_panola.midinotePattern.asStream.all.reverse + 12,
         mel_durs: melody_panola.durationPattern.asStream.all,
         meldur_transformer: chordify_per_meas,
@@ -390,7 +372,7 @@ s.waitForBoot({
         mel_amp_pat: Pbrown(0.56,0.7,0.05),
     );
 
-    variation2c_pattern = pattern_compiler.(
+    var variation2c_pattern = pattern_compiler.(
         mel_notes: melody_panola.midinotePattern.asStream.all.reverse+12,
         mel_durs: melody_panola.durationPattern.asStream.all,
         meldur_transformer: chordify_per_meas,
@@ -402,7 +384,7 @@ s.waitForBoot({
         mel_amp_pat: Pbrown(0.56, 0.9, 0.05),
     );
 
-    variation2_pattern = pattern_compiler.(
+    var variation2_pattern = pattern_compiler.(
         mel_notes: melody_panola.midinotePattern.asStream.all+12,
         mel_durs: melody_panola.durationPattern.asStream.all,
         meldur_transformer: keep_original,
@@ -414,7 +396,7 @@ s.waitForBoot({
         mel_amp_pat: Pseq([0.56], inf),
     );
 
-    variation3_pattern = pattern_compiler.(
+    var variation3_pattern = pattern_compiler.(
         mel_notes: melody_notes,
         mel_durs: melody_durations,
         meldur_transformer: keep_original,
@@ -427,35 +409,35 @@ s.waitForBoot({
         accomp_amp_pat: Pseq([0.3], inf)
     );
 
-    variation4_pattern = pattern_compiler.(
+    var variation4_pattern = pattern_compiler.(
         mel_notes: melody_panola.midinotePattern.asStream.all.reverse,
         mel_durs: melody_panola.durationPattern.asStream.all,
         meldur_transformer: expand_notes_461,
         mel_tempo_scale: 1,
         accomp_notes: (accompaniment_panola.midinotePattern.asStream.all+12).dup(2).flatten(1),
-        accomp_durs: (accompaniment_panola.durationPattern.asStream.all).dup(2).flatten(1)/2,
+        accomp_durs: (accompaniment_panola.durationPattern.asStream.all).dup(2).flatten(1),
         accompdur_transformer: chordify_per_meas,
         accomp_tempo_scale: 0.5,
         mel_amp_pat: Pseq([0.9], inf),
         accomp_amp_pat: Pseq([0.9], inf),
     );
 
-    wiggle = { |x| sin(2*pi*0.1*x).linlin(-1, 1, (8192-600), (8192+600)); };
-    wiggle_pattern = Pbind(
+    var wiggle = { |x| sin(2*pi*0.1*x).linlin(-1, 1, (8192-600), (8192+600)); };
+    var wiggle_pattern = Pbind(
         \dev, Ptime().collect(wiggle),
         \send, Pfunc({|ev| ~rev2.midi_out.bend(0, ev[\dev]); }),
         \dur, 0.2,
         \amp, 0,
     );
-    chaotic_wiggle = { |x| sin(2*pi*0.3*x).linlin(-1, 1, (8192-5000), (8192+5000)); };
-    chaotic_wiggle_pattern = Pbind(
+    var chaotic_wiggle = { |x| sin(2*pi*0.3*x).linlin(-1, 1, (8192-5000), (8192+5000)); };
+    var chaotic_wiggle_pattern = Pbind(
         \dev, Phenon().linlin(0,1,8192-5000,8192+5000),
         \send, Pfunc({|ev| ~rev2.midi_out.bend(0, ev[\dev][0]); }),
         \dur, 0.2,
         \amp, 0,
     );
 
-    all_variations = Pseq([
+    var all_variations = Pseq([
         Pbind(\send, Pfunc({
             ~rev2.select_patch_by_id("F1", "P3");
             ~rev2.sendNRPN(l.str2num(\UNISON_OFFON,"B"), 0);
@@ -472,7 +454,7 @@ s.waitForBoot({
         Ppar([
             Pseq([
                 Pfindur((variation2a_pattern[\accomp_durs].sum).max(variation2a_pattern[\mel_durs].sum)/2,
-                     wiggle_pattern),
+                    wiggle_pattern),
                 Pfunc({~rev2.midi_out.bend(0, 8192); nil})]),
             Pfindur((variation2a_pattern[\accomp_durs].sum).max(variation2a_pattern[\mel_durs].sum)/2,
                 variation2a_pattern[\pat])]),
@@ -490,7 +472,7 @@ s.waitForBoot({
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P74"); nil})),
         Pfindur((variation2c_pattern[\accomp_durs].sum).max(variation2c_pattern[\mel_durs].sum)/2,
-                variation2c_pattern[\pat]),
+            variation2c_pattern[\pat]),
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P66"); ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 37); nil})),
         variation1b_pattern[\pat],
@@ -514,7 +496,7 @@ s.waitForBoot({
         Ppar([
             Pseq([
                 Pfindur((variation2c_pattern[\accomp_durs].sum).max(variation2c_pattern[\mel_durs].sum)/2,
-                     chaotic_wiggle_pattern),
+                    chaotic_wiggle_pattern),
                 Pfunc({~rev2.midi_out.bend(0, 8192); nil})]),
             Pfindur((variation2c_pattern[\accomp_durs].sum).max(variation2c_pattern[\mel_durs].sum)/2,
                 variation2c_pattern[\pat])]),
