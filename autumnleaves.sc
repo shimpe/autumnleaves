@@ -538,7 +538,11 @@ s.waitForBoot({
 
 
     all_variations = Pseq([
-        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F1", "P3"); ~rev2.sendNRPN(l.str2num(\UNISON_OFFON,"B").debug("nrpn"), 0); nil})),
+
+        Pbind(\send, Pfunc({
+            ~rev2.select_patch_by_id("F1", "P3");
+            ~rev2.sendNRPN(l.str2num(\UNISON_OFFON,"B"), 0);
+            nil})),
         original_pattern,
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P5"); nil})),
@@ -547,7 +551,7 @@ s.waitForBoot({
         ////Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P100"); nil})),
         ////variation2_pattern,
 
-        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P11"); nil})),
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P11"); ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 79); nil})),
         variation3_pattern,
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P20"); nil})),
@@ -559,7 +563,12 @@ s.waitForBoot({
             Pfindur((var2a_accompaniment_durs.sum).max(var2a_melody_durs.sum)/2,
                 variation2a_pattern)]),
 
-        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F1", "P79"); nil})),
+        Pbind(\send, Pfunc({
+            ~rev2.select_patch_by_id("F1", "P79");
+            ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 25);
+            ~rev2.sendNRPN(l.str2num(\LPF_RESONANCE), 10);
+            ~rev2.sendNRPN(l.str2num(\LPF_ENV_AMT), 71 + 127);
+            nil})),
         variation3_pattern,
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F1", "P86"); nil})),
@@ -576,9 +585,10 @@ s.waitForBoot({
         //variation1_pattern,
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P74"); nil})),
-        variation2c_pattern,
+        Pfindur((var2c_accompaniment_durs.sum).max(var2c_melody_durs.sum)/2,
+                variation2c_pattern),
 
-        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P66"); nil})),
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P66"); ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 37); nil})),
         variation1b_pattern,
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P61"); nil})),
@@ -587,7 +597,11 @@ s.waitForBoot({
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P81"); nil})),
         variation4_pattern,
 
-        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P128"); nil})),
+        Pbind(\send, Pfunc({
+            ~rev2.select_patch_by_id("F2", "P128");
+            ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 52);
+            ~rev2.sendNRPN(l.str2num(\LPF_RESONANCE), 127);
+            nil})),
         variation1_pattern,
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P73"); nil})),
@@ -605,10 +619,19 @@ s.waitForBoot({
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P128"); ~rev2.sendNRPN(l.str2num(\UNISON_OFFON), 0); nil})),
         variation1_pattern,
 
-        Pbind(\send, Pfunc({~rev2.select_patch_by_id("U1", "P1"); ~rev2.sendNRPN(l.str2num(\UNISON_OFFON), 0); ~rev2.sendNRPN(l.str2num(\UNISON_OFFON, "B"), 0); nil})),
-        Padd(\midinote, Pfunc({-24}), original_pattern),
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("U1", "P1");
+            ~rev2.sendNRPN(l.str2num(\UNISON_OFFON), 0);
+            ~rev2.sendNRPN(l.str2num(\UNISON_OFFON, "B"), 0);
+            ~rev2.sendNRPN(l.str2num(\LPF_RESONANCE), 127);
+            nil})),
+        Padd(\midinote, Pfunc({-18}), original_pattern),
 
-        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P106"); ~rev2.sendNRPN(l.str2num(\UNISON_OFFON), 0); nil})),
+        Pbind(\send, Pfunc({
+            ~rev2.select_patch_by_id("F2", "P106");
+            ~rev2.sendNRPN(l.str2num(\UNISON_OFFON), 0);
+            ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 75);
+            ~rev2.sendNRPN(l.str2num(\LPF_RESONANCE), 85);
+            nil})),
         variation1_pattern,
 
     ]);
