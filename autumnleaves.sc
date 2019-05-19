@@ -142,8 +142,6 @@ s.waitForBoot({
     var variation1b_pattern;
     var variation2_pattern;
     var variation2a_pattern;
-    var var2a_melody_durs;
-    var var2a_accompaniment_durs;
     var variation2c_pattern;
     var var2c_melody_durs;
     var var2c_accompaniment_durs;
@@ -400,9 +398,6 @@ s.waitForBoot({
         accompdur_transformer: arpeggify,
         accomp_tempo_scale: 1,
     );
-
-    var2a_melody_durs = (chordify.(melody_panola.midinotePattern.asStream.all.reverse, melody_panola.durationPattern.asStream.all,1)[1]*6);
-    var2a_accompaniment_durs = (chordify.(accompaniment_panola.midinotePattern.asStream.all,accompaniment_panola.durationPattern.asStream.all,1)[1]*3);
 
     variation2a_pattern = pattern_compiler.(
         mel_notes: melody_panola.midinotePattern.asStream.all.reverse + 12,
