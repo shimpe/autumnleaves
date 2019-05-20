@@ -261,6 +261,45 @@ s.waitForBoot({
         [ns, ds]
     };
 
+    var wildify = {
+        | notes, durations, bylength=1 |
+        var measures_note = [];
+        var measure_note = [];
+        var measures_dur = [];
+        var measure_dur = [];
+        var accumulated_length = 0;
+        notes.do({
+            | note, idx |
+
+            var duration = durations[idx];
+            measure_note = measure_note ++ [note];
+            measure_dur = measure_dur ++ duration;
+            accumulated_length = accumulated_length + duration;
+
+            if ((accumulated_length >= bylength) || (idx == notes.size) ) {
+                var temp_measure_notes;
+                var temp_measure_durs;
+                var result;
+                var factors;
+
+                result = arpeggify.(measure_note, measure_dur);
+                temp_measure_notes = result[0];
+                temp_measure_durs = result[1];
+                measures_note = (measures_note ++ (temp_measure_notes - 12.rrand(1)) ++ (temp_measure_notes.reverse+1.rrand(6)) ++ (temp_measure_notes + 12));
+                factors = [3.rrand(1.0), 3.rrand(1.0), 3.rrand(1.0)].normalizeSum*1.2;
+                measures_dur = (measures_dur ++ (((temp_measure_durs*factors[0]) ++ (temp_measure_durs*factors[1]) ++ (temp_measure_durs*factors[2]))));
+                measure_note = [];
+                measure_dur = [];
+                accumulated_length = 0;
+            };
+        });
+        [measures_note, measures_dur];
+    };
+    var wildify_by_meas = {
+        | notes, durations |
+        wildify.(notes, durations, 1);
+    };
+
     // F1 P22 (PLUCKY/WASHY)
     // F3 P50 (FLOOTY)
     // F1 P48 (WOOD ORGAN)/F3 P87 (ORGAN/CLEARER)
@@ -329,7 +368,7 @@ s.waitForBoot({
         mel_durs: melody_panola.durationPattern.asStream.all,
         meldur_transformer: keep_original,
         mel_tempo_scale: 1,
-        accomp_notes: accompaniment_panola.midinotePattern.asStream.all+12,
+        accomp_notes: accompaniment_panola.midinotePattern.asStream.all + 12,
         accomp_durs: accompaniment_panola.durationPattern.asStream.all,
         accompdur_transformer: keep_original,
         accomp_tempo_scale: 1,
@@ -432,6 +471,32 @@ s.waitForBoot({
         accomp_amp_pat: Pseq([0.9], inf),
     );
 
+    var wildvariation_pattern = pattern_compiler.(
+        mel_notes: melody_panola.midinotePattern.asStream.all,
+        mel_durs: melody_panola.durationPattern.asStream.all,
+        meldur_transformer: wildify_by_meas,
+        mel_tempo_scale: 1,
+        accomp_notes: accompaniment_panola.midinotePattern.asStream.all,
+        accomp_durs: accompaniment_panola.durationPattern.asStream.all,
+        accompdur_transformer: wildify_by_meas,
+        accomp_tempo_scale: 1,
+        mel_amp_pat: Pseq([0.9], inf),
+        accomp_amp_pat: Pseq([0.9], inf),
+    );
+
+    var wildvariation2_pattern = pattern_compiler.(
+        mel_notes: melody_panola.midinotePattern.asStream.all,
+        mel_durs: melody_panola.durationPattern.asStream.all,
+        meldur_transformer: wildify_by_meas,
+        mel_tempo_scale: 1,
+        accomp_notes: accompaniment_panola.midinotePattern.asStream.all,
+        accomp_durs: accompaniment_panola.durationPattern.asStream.all,
+        accompdur_transformer: wildify_by_meas,
+        accomp_tempo_scale: 1,
+        mel_amp_pat: Pseq([0.9], inf),
+        accomp_amp_pat: Pseq([0.9], inf),
+    );
+
     var wiggle = { |x| sin(2*pi*0.1*x).linlin(-1, 1, (8192-600), (8192+600)); };
     var wiggle_pattern = Pbind(
         \dev, Ptime().collect(wiggle),
@@ -461,7 +526,9 @@ s.waitForBoot({
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P11"); ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 79); nil})),
         variation3_pattern[\pat],
 
-        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P20"); nil})),
+        Pbind(\send, Pfunc({
+            ~rev2.select_patch_by_id("F3", "P20");
+            ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 0); nil})),
         Ppar([
             Pseq([
                 Pfindur((variation2a_pattern[\accomp_durs].sum).max(variation2a_pattern[\mel_durs].sum)/2,
@@ -478,18 +545,21 @@ s.waitForBoot({
             nil})),
         variation5_pattern[\pat],
 
-        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F1", "P86"); nil})),
-        variation4_pattern[\pat],
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F1", "P86"); ~rev2.sendNRPN(l.str2num(\UNISON_OFFON), 0); nil})),
+        wildvariation_pattern[\pat],
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P74"); nil})),
         Pfindur((variation2c_pattern[\accomp_durs].sum).max(variation2c_pattern[\mel_durs].sum)/2,
             variation2c_pattern[\pat]),
 
+        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P58"); nil})),
+        wildvariation2_pattern[\pat],
+
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P66"); ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 37); nil})),
         variation1b_pattern[\pat],
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P61"); nil})),
-        variation1_pattern[\pat],
+        wildvariation_pattern[\pat],
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F2", "P81"); nil})),
         variation4_pattern[\pat],
@@ -503,6 +573,7 @@ s.waitForBoot({
             nil})),
         variation1_pattern[\pat],
 
+/*
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P73"); nil})),
         Ppar([
             Pseq([
@@ -511,11 +582,15 @@ s.waitForBoot({
                 Pfunc({~rev2.midi_out.bend(0, 8192); nil})]),
             Pfindur((variation2c_pattern[\accomp_durs].sum).max(variation2c_pattern[\mel_durs].sum)/2,
                 variation2c_pattern[\pat])]),
+*/
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P28"); ~rev2.sendNRPN(l.str2num('ABMODE'), 0); nil})),
         Padd(\midinote, Pfunc({-24}), variation2c_pattern[\pat]),
 
-        Pbind(\send, Pfunc({~rev2.select_patch_by_id("F3", "P128"); ~rev2.sendNRPN(l.str2num(\UNISON_OFFON), 0); nil})),
+        Pbind(\send, Pfunc({
+            ~rev2.select_patch_by_id("F3", "P128");
+            ~rev2.sendNRPN(l.str2num(\UNISON_OFFON), 0);
+            ~rev2.sendNRPN(l.str2num(\LPF_CUTOFF), 55); nil})),
         variation1_pattern[\pat],
 
         Pbind(\send, Pfunc({~rev2.select_patch_by_id("U1", "P1");
@@ -523,7 +598,7 @@ s.waitForBoot({
             ~rev2.sendNRPN(l.str2num(\UNISON_OFFON, "B"), 0);
             ~rev2.sendNRPN(l.str2num(\LPF_RESONANCE), 127);
             nil})),
-        Padd(\midinote, Pfunc({-18}), original_pattern),
+        Padd(\midinote, Pfunc({-18}), original_pattern[\pat]),
 
         Pbind(\send, Pfunc({
             ~rev2.select_patch_by_id("F2", "P106");
@@ -532,10 +607,6 @@ s.waitForBoot({
             ~rev2.sendNRPN(l.str2num(\LPF_RESONANCE), 85);
             nil})),
         variation1_pattern[\pat],
-
-        Pbind(\send, Pfunc({ ~rev2.select_patch_by_id("F1","P127"); nil;})),
-        Panola("<g_1*10 g2_2 d3 a3 b- d4>").asMidiPbind(~rev2.midi_out)
-
     ]);
 
     all_variations.play;
